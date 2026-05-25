@@ -12,6 +12,7 @@ data/processed/*
 !data/processed/.gitkeep
 evals/results/*
 !evals/results/.gitkeep
+!evals/results/example.schema.json
 checkpoints/
 models/
 

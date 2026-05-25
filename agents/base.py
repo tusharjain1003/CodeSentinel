@@ -6,7 +6,7 @@ from abc import ABC
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from serving.client import complete_with_function_call
 
@@ -34,6 +34,12 @@ class ReviewComment(BaseModel):
     message: str
     suggestion: Optional[str] = None
     confidence: float = Field(ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def validate_line_range(self) -> ReviewComment:
+        if self.line_end < self.line_start:
+            raise ValueError("line_end must be greater than or equal to line_start")
+        return self
 
 
 class AgentReview(BaseModel):
@@ -101,8 +107,7 @@ class BaseAgent(ABC):
             {"role": "user", "content": self._build_prompt(diff, file_path)},
         ]
         try:
-            result = await complete_with_function_call(messages, tools=[REVIEW_TOOL])
-            comments = [ReviewComment(**c) for c in result.get("comments", [])]
+            comments = await self._model_review(messages, file_path)
         except Exception:
             comments = self._heuristic_review(diff, file_path)
 
@@ -123,6 +128,35 @@ class BaseAgent(ABC):
 Use the submit_review function to return findings. Return an empty comments array when
 there are no issues."""
 
+    async def _model_review(
+        self,
+        messages: list[dict[str, str]],
+        file_path: str,
+        max_attempts: int = 2,
+    ) -> list[ReviewComment]:
+        last_error: Exception | None = None
+        repair_messages = list(messages)
+        for attempt in range(max_attempts):
+            try:
+                result = await complete_with_function_call(repair_messages, tools=[REVIEW_TOOL])
+                return validate_review_result(result, fallback_file_path=file_path)
+            except (KeyError, TypeError, ValueError, ValidationError) as exc:
+                last_error = exc
+                if attempt == max_attempts - 1:
+                    break
+                repair_messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Your previous tool output did not match the schema. "
+                            "Retry with valid category/severity values, positive line numbers, "
+                            "line_end >= line_start, confidence between 0 and 1, and the "
+                            f"file_path set to `{file_path}` when uncertain."
+                        ),
+                    }
+                )
+        raise last_error or ValueError("model review failed")
+
     def _heuristic_review(self, diff: str, file_path: str) -> list[ReviewComment]:
         return []
 
@@ -131,3 +165,20 @@ def parse_tool_arguments(arguments: str | dict) -> dict:
     if isinstance(arguments, dict):
         return arguments
     return json.loads(arguments)
+
+
+def validate_review_result(result: dict, fallback_file_path: str) -> list[ReviewComment]:
+    raw_comments = result.get("comments", [])
+    if not isinstance(raw_comments, list):
+        raise ValueError("comments must be a list")
+
+    comments: list[ReviewComment] = []
+    for raw in raw_comments:
+        if not isinstance(raw, dict):
+            raise ValueError("each comment must be an object")
+        normalized = dict(raw)
+        normalized["file_path"] = normalized.get("file_path") or fallback_file_path
+        if normalized.get("line_end") is None and normalized.get("line_start") is not None:
+            normalized["line_end"] = normalized["line_start"]
+        comments.append(ReviewComment(**normalized))
+    return comments
