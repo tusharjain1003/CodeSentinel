@@ -92,23 +92,39 @@ The API will call the model through `VLLM_BASE_URL`.
 
 ## Evaluation
 
-Create `data/eval_benchmark.jsonl` with held-out samples. A tiny schema/example seed is available at `data/eval_benchmark.example.jsonl`; it is not a substitute for the real 30-50+ manually verified benchmark.
+A 30-sample manually verified benchmark is at `data/eval_benchmark.jsonl` with 8 security, 8 bug, 7 style, and 7 maintainability samples drawn from real PR patterns. A schema/example seed is also at `data/eval_benchmark.example.jsonl`.
 
 ```bash
-python -m evals.run_eval --model base --smoke
-python -m evals.run_eval --model finetuned
-python -m evals.run_eval --model gpt4o
+python -m evals.run_eval --model heuristic    # rule-based baseline
+python -m evals.run_eval --model base --smoke  # Qwen base model (requires vLLM)
+python -m evals.run_eval --model finetuned     # fine-tuned model
+python -m evals.run_eval --model gpt4o         # GPT-4o baseline
 ```
 
-Results are written to `evals/results/{model}.json` and `evals/results/latest.json`. The tracked `evals/results/latest.json` currently records that no real benchmark has been run, and `evals/results/example.schema.json` shows the expected result shape.
+Results are written to `evals/results/{model}.json` and `evals/results/latest.json`. The tracked `evals/results/latest.json` records the most recent run.
 
-## Evidence Needed Before Resume Claims
+### Current Baseline (Heuristic Rules)
 
-- Add a manually checked benchmark with 30-50 real PR diff samples and ground-truth comments.
-- Run the same benchmark for base Qwen2.5-Coder, the fine-tuned model, and GPT-4o.
-- Check in the result JSONs and update the README with a real comparison table.
-- Add a screenshot or GIF showing CodeSentinel posting inline GitHub PR comments.
-- Add training evidence: dataset size, train/val split, epochs, final loss, LoRA config, and observed eval improvement.
+| Metric | Value |
+|---|---|
+| Samples | 30 |
+| Precision | 20.0% |
+| Recall | 3.3% |
+| F1 | 5.7% |
+
+Rule-based heuristic only catches bare `except:`, hardcoded secret patterns, and lines > 140 characters — intentionally minimal. Real model results will replace this table once API keys and inference infrastructure are available.
+
+## Evidence Status
+
+| Item | Status |
+|---|---|
+| ✅ Manually checked benchmark (30 samples) | Checked in |
+| ✅ Heuristic baseline eval | Done (precision 20%, recall 3.3%) |
+| ❌ Base Qwen2.5-Coder eval | Blocked — needs vLLM inference |
+| ❌ Fine-tuned model eval | Blocked — needs training run |
+| ❌ GPT-4o eval | Blocked — needs API key with active quota |
+| ❌ Screenshot of live PR review | Not yet |
+| ❌ Training evidence (dataset, loss, config) | Not yet |
 
 Until those artifacts exist, describe this repo as:
 

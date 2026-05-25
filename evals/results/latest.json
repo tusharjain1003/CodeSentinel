@@ -1,6 +1,14 @@
 {
-  "status": "not_run",
-  "message": "No real benchmark has been run yet. Create data/eval_benchmark.jsonl, then run python -m evals.run_eval --model base, finetuned, and gpt4o.",
-  "models_expected": ["base", "finetuned", "gpt4o"],
-  "metrics_expected": ["precision", "recall", "f1", "quality"]
+  "created_at": "2026-05-25T23:40:14.401303+00:00",
+  "model": "gpt4o",
+  "model_name": "gpt-4o",
+  "samples": 30,
+  "totals": {
+    "tp": 1,
+    "fp": 4,
+    "fn": 29
+  },
+  "precision": 0.2,
+  "recall": 0.03333333333333333,
+  "f1": 0.05714285714285715
 }
