@@ -38,7 +38,7 @@ class FeedbackRequest(BaseModel):
     review_id: str
     comment_idx: int = Field(ge=0)
     rating: int = Field(ge=-1, le=1)
-    correction: Optional[str] = None
+    correction: Optional[str] = None  # noqa: UP045
 
 
 def verify_webhook_signature(request: Request, body: bytes) -> None:

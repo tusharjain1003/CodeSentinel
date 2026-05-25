@@ -32,7 +32,7 @@ class ReviewComment(BaseModel):
     line_start: int = Field(ge=1)
     line_end: int = Field(ge=1)
     message: str
-    suggestion: Optional[str] = None
+    suggestion: Optional[str] = None  # noqa: UP045
     confidence: float = Field(ge=0.0, le=1.0)
 
     @model_validator(mode="after")
