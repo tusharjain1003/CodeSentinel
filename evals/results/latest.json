@@ -1,0 +1,6 @@
+{
+  "status": "not_run",
+  "message": "No real benchmark has been run yet. Create data/eval_benchmark.jsonl, then run python -m evals.run_eval --model base, finetuned, and gpt4o.",
+  "models_expected": ["base", "finetuned", "gpt4o"],
+  "metrics_expected": ["precision", "recall", "f1", "quality"]
+}

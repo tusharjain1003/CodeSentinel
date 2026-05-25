@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from config import settings
+from evals.results import load_latest_result, load_model_results
 from pipeline.graph import ReviewState, run_pipeline
 from pipeline.parse_pr import fetch_pr_diff
 
@@ -139,9 +140,8 @@ async def get_review(review_id: str) -> dict:
 @app.get("/api/eval/metrics")
 async def get_eval_metrics() -> dict:
     return {
-        "finetuned": {"precision": 0, "recall": 0, "f1": 0, "quality": 0},
-        "base": {"precision": 0, "recall": 0, "f1": 0, "quality": 0},
-        "gpt4o": {"precision": 0, "recall": 0, "f1": 0, "quality": 0},
+        "models": load_model_results(),
+        "latest": load_latest_result(),
     }
 
 

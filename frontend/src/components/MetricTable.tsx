@@ -34,10 +34,10 @@ export function MetricTable({ metrics }: Props) {
           {Object.entries(metrics).map(([key, value]) => (
             <tr key={key}>
               <td>{labels[key] ?? key}</td>
-              <td>{formatPercent(value.precision)}</td>
-              <td>{formatPercent(value.recall)}</td>
-              <td>{formatPercent(value.f1)}</td>
-              <td>{value.quality.toFixed(1)}/3</td>
+              <td>{value.precision === null ? "Not run" : formatPercent(value.precision)}</td>
+              <td>{value.recall === null ? "Not run" : formatPercent(value.recall)}</td>
+              <td>{value.f1 === null ? "Not run" : formatPercent(value.f1)}</td>
+              <td>{value.quality === null ? "Not run" : `${value.quality.toFixed(1)}/3`}</td>
             </tr>
           ))}
         </tbody>

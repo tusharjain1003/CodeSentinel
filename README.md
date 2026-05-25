@@ -17,6 +17,8 @@ Current status: the multi-agent review pipeline, schema contracts, GitHub integr
 - Vite/React dashboard for model comparison, recent reviews, and manual PR review.
 - Docker, Railway config, GitHub Actions CI, and tests.
 
+See `docs/EVIDENCE.md` for the exact benchmark, training, and demo artifacts needed before making fine-tuned model improvement claims.
+
 ## Quick Start
 
 ```bash
@@ -98,7 +100,7 @@ python -m evals.run_eval --model finetuned
 python -m evals.run_eval --model gpt4o
 ```
 
-Results are written to `evals/results/{model}.json` and `evals/results/latest.json`. The tracked `evals/results/example.schema.json` shows the expected result shape.
+Results are written to `evals/results/{model}.json` and `evals/results/latest.json`. The tracked `evals/results/latest.json` currently records that no real benchmark has been run, and `evals/results/example.schema.json` shows the expected result shape.
 
 ## Evidence Needed Before Resume Claims
 

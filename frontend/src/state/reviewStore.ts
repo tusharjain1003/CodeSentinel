@@ -1,10 +1,11 @@
 import { create } from "zustand";
 
 export type Metrics = {
-  precision: number;
-  recall: number;
-  f1: number;
-  quality: number;
+  precision: number | null;
+  recall: number | null;
+  f1: number | null;
+  quality: number | null;
+  status?: string;
 };
 
 export type Review = {
@@ -41,6 +42,6 @@ export const useReviewStore = create<ReviewStore>((set) => ({
   fetchEvalMetrics: async () => {
     const response = await fetch("/api/eval/metrics");
     const data = await response.json();
-    set({ evalMetrics: data });
+    set({ evalMetrics: data.models ?? data });
   }
 }));
