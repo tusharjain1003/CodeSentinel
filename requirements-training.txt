@@ -1,0 +1,10 @@
+transformers>=4.43
+peft>=0.12
+trl>=0.9
+bitsandbytes>=0.43
+accelerate>=0.33
+datasets>=2.20
+wandb>=0.17
+torch>=2.3
+huggingface-hub>=0.24
+pyyaml>=6.0

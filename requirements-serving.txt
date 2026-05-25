@@ -1,0 +1,4 @@
+vllm>=0.5
+autoawq>=0.2
+transformers>=4.43
+openai>=1.35
