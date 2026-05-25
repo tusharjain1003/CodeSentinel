@@ -16,8 +16,13 @@ SEVERITY_ORDER = {
 
 
 class ReviewCoordinator:
-    def __init__(self) -> None:
-        self.agents = [BugAgent(), SecurityAgent(), StyleAgent()]
+    def __init__(self, model_name: str | None = None) -> None:
+        self.model_name = model_name
+        self.agents = [
+            BugAgent(model_name=model_name),
+            SecurityAgent(model_name=model_name),
+            StyleAgent(model_name=model_name),
+        ]
 
     async def coordinate(self, diff: str, file_path: str) -> list[ReviewComment]:
         agent_reviews: list[AgentReview] = await asyncio.gather(

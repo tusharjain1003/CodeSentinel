@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, TypedDict
 
 try:
@@ -10,8 +11,12 @@ except Exception:  # pragma: no cover - optional dependency in local smoke tests
 
 from agents.base import ReviewComment
 from agents.coordinator import ReviewCoordinator
+from config import settings
+from pipeline.parse_pr import diff_hash as hash_diff
 from pipeline.parse_pr import parse_diff
 from pipeline.post_review import post_pr_review
+
+logger = logging.getLogger(__name__)
 
 
 class ReviewState(TypedDict):
@@ -45,12 +50,27 @@ async def node_run_agents(state: ReviewState) -> ReviewState:
 
 async def node_post_review(state: ReviewState) -> ReviewState:
     comments = [ReviewComment(**comment) for comment in state["final_comments"]]
-    await post_pr_review(state["repo"], state["pr_number"], comments)
-    state["posted_to_github"] = True
+    state["posted_to_github"] = await post_pr_review(state["repo"], state["pr_number"], comments)
     return state
 
 
 async def node_persist(state: ReviewState) -> ReviewState:
+    try:
+        from db.access import insert_review
+
+        await insert_review(
+            review_id=state["session_id"],
+            pr_url=state["pr_url"],
+            repo=state["repo"],
+            pr_number=state["pr_number"],
+            diff_hash=hash_diff(state["diff"]),
+            model_used=settings.vllm_model_name,
+            comments=state["final_comments"],
+            timing_ms={},
+            token_cost={},
+        )
+    except Exception as exc:
+        logger.info("Review pipeline completed but persistence failed: %s", exc)
     return state
 
 

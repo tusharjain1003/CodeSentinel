@@ -11,6 +11,14 @@ _client = AsyncOpenAI(
     base_url=settings.vllm_base_url,
     api_key=settings.openai_api_key or "not-needed",
 )
+_openai_client = AsyncOpenAI(api_key=settings.openai_api_key or "not-needed")
+
+
+def _select_client(model: str | None = None) -> AsyncOpenAI:
+    model_name = model or settings.vllm_model_name
+    if model_name == settings.gpt4o_model_name or model_name.startswith("gpt-"):
+        return _openai_client
+    return _client
 
 
 async def complete(
@@ -29,7 +37,7 @@ async def complete(
     if response_format:
         kwargs["response_format"] = response_format
 
-    response = await _client.chat.completions.create(**kwargs)
+    response = await _select_client(model).chat.completions.create(**kwargs)
     return response.choices[0].message.content or ""
 
 
@@ -38,7 +46,7 @@ async def complete_with_function_call(
     tools: list[dict[str, Any]],
     model: str | None = None,
 ) -> dict[str, Any]:
-    response = await _client.chat.completions.create(
+    response = await _select_client(model).chat.completions.create(
         model=model or settings.vllm_model_name,
         messages=messages,
         tools=tools,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agents.base import BaseAgent, Category, ReviewComment, Severity
+from agents.base import BaseAgent, Category, ReviewComment, Severity, iter_added_lines
 
 
 class BugAgent(BaseAgent):
@@ -15,16 +15,16 @@ For each bug, explain clearly why it is wrong and what the correct behavior shou
 
     def _heuristic_review(self, diff: str, file_path: str) -> list[ReviewComment]:
         comments: list[ReviewComment] = []
-        for idx, line in enumerate(diff.splitlines(), start=1):
-            added = line.startswith("+") and not line.startswith("+++")
-            if added and "except:" in line:
+        for added_line in iter_added_lines(diff):
+            line = added_line.content
+            if "except:" in line:
                 comments.append(
                     ReviewComment(
                         category=Category.bug,
                         severity=Severity.major,
                         file_path=file_path,
-                        line_start=idx,
-                        line_end=idx,
+                        line_start=added_line.line_number,
+                        line_end=added_line.line_number,
                         message=(
                             "Bare except blocks can hide real failures and make "
                             "review results unreliable."
@@ -36,14 +36,14 @@ For each bug, explain clearly why it is wrong and what the correct behavior shou
                         confidence=0.72,
                     )
                 )
-            if added and (".get(" in line and "None" not in line and "or" not in line):
+            if ".get(" in line and "None" not in line and "or" not in line:
                 comments.append(
                     ReviewComment(
                         category=Category.bug,
                         severity=Severity.minor,
                         file_path=file_path,
-                        line_start=idx,
-                        line_end=idx,
+                        line_start=added_line.line_number,
+                        line_end=added_line.line_number,
                         message="Dictionary access via get may return None if the key is missing.",
                         suggestion=(
                             "Provide an explicit default or validate the value before "

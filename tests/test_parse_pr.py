@@ -1,3 +1,4 @@
+from agents.base import iter_added_lines
 from pipeline.parse_pr import diff_hash, parse_diff, validate_diff
 
 
@@ -33,3 +34,24 @@ def test_validate_diff_rejects_large_file_count() -> None:
         assert "Too many files" in str(exc)
     else:
         raise AssertionError("Expected ValueError")
+
+
+def test_iter_added_lines_uses_new_file_line_numbers() -> None:
+    diff = """--- a/app.py
++++ b/app.py
+@@ -10,5 +10,6 @@ def handler():
+ context()
+-old_call()
++new_call()
+ unchanged()
+@@ -30,2 +31,3 @@ def other():
++except:
+ final()
+"""
+
+    added = list(iter_added_lines(diff))
+
+    assert [(line.line_number, line.content) for line in added] == [
+        (11, "new_call()"),
+        (31, "except:"),
+    ]

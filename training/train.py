@@ -1,11 +1,10 @@
+import torch
+import wandb
 import yaml
 from datasets import load_dataset
 from peft import LoraConfig, TaskType, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from trl import SFTConfig, SFTTrainer
-
-import torch
-import wandb
 
 
 def train(config_path: str = "training/config.yaml") -> None:

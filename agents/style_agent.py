@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agents.base import BaseAgent, Category, ReviewComment, Severity
+from agents.base import BaseAgent, Category, ReviewComment, Severity, iter_added_lines
 
 
 class StyleAgent(BaseAgent):
@@ -15,16 +15,16 @@ Avoid trivial stylistic preferences."""
 
     def _heuristic_review(self, diff: str, file_path: str) -> list[ReviewComment]:
         comments: list[ReviewComment] = []
-        for idx, line in enumerate(diff.splitlines(), start=1):
-            added = line.startswith("+") and not line.startswith("+++")
-            if added and len(line) > 140:
+        for added_line in iter_added_lines(diff):
+            line = added_line.content
+            if len(line) > 140:
                 comments.append(
                     ReviewComment(
                         category=Category.maintainability,
                         severity=Severity.nit,
                         file_path=file_path,
-                        line_start=idx,
-                        line_end=idx,
+                        line_start=added_line.line_number,
+                        line_end=added_line.line_number,
                         message=(
                             "This added line is long enough to be difficult to scan "
                             "during reviews."

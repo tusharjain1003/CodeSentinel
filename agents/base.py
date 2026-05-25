@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from abc import ABC
+from collections.abc import Iterable
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
 
@@ -47,6 +50,15 @@ class AgentReview(BaseModel):
     comments: List[ReviewComment]
     timing_ms: int
     token_usage: Dict[str, int] = Field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class AddedLine:
+    line_number: int
+    content: str
+
+
+HUNK_HEADER_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
 
 REVIEW_TOOL = {
@@ -100,6 +112,9 @@ class BaseAgent(ABC):
     focus: str
     system_prompt: str
 
+    def __init__(self, model_name: str | None = None) -> None:
+        self.model_name = model_name
+
     async def review(self, diff: str, file_path: str) -> AgentReview:
         t0 = time.monotonic()
         messages = [
@@ -138,7 +153,11 @@ there are no issues."""
         repair_messages = list(messages)
         for attempt in range(max_attempts):
             try:
-                result = await complete_with_function_call(repair_messages, tools=[REVIEW_TOOL])
+                result = await complete_with_function_call(
+                    repair_messages,
+                    tools=[REVIEW_TOOL],
+                    model=self.model_name,
+                )
                 return validate_review_result(result, fallback_file_path=file_path)
             except (KeyError, TypeError, ValueError, ValidationError) as exc:
                 last_error = exc
@@ -159,6 +178,29 @@ there are no issues."""
 
     def _heuristic_review(self, diff: str, file_path: str) -> list[ReviewComment]:
         return []
+
+
+def iter_added_lines(diff: str) -> Iterable[AddedLine]:
+    """Yield added lines with their new-file line numbers from a unified diff."""
+    new_line_number: int | None = None
+    for raw_line in diff.splitlines():
+        header = HUNK_HEADER_RE.match(raw_line)
+        if header:
+            new_line_number = int(header.group(1))
+            continue
+        if new_line_number is None:
+            continue
+        if raw_line.startswith("+++"):
+            continue
+        if raw_line.startswith("+"):
+            yield AddedLine(new_line_number, raw_line[1:])
+            new_line_number += 1
+            continue
+        if raw_line.startswith("-"):
+            continue
+        if raw_line.startswith("\\"):
+            continue
+        new_line_number += 1
 
 
 def parse_tool_arguments(arguments: str | dict) -> dict:

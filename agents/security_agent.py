@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agents.base import BaseAgent, Category, ReviewComment, Severity
+from agents.base import BaseAgent, Category, ReviewComment, Severity, iter_added_lines
 
 
 class SecurityAgent(BaseAgent):
@@ -17,17 +17,17 @@ Only flag real vulnerabilities, not unlikely exploit chains."""
     def _heuristic_review(self, diff: str, file_path: str) -> list[ReviewComment]:
         comments: list[ReviewComment] = []
         risky_tokens = ("password=", "api_key=", "secret=", "token=")
-        for idx, line in enumerate(diff.splitlines(), start=1):
+        for added_line in iter_added_lines(diff):
+            line = added_line.content
             normalized = line.lower().replace(" ", "")
-            added = line.startswith("+") and not line.startswith("+++")
-            if added and any(token in normalized for token in risky_tokens):
+            if any(token in normalized for token in risky_tokens):
                 comments.append(
                     ReviewComment(
                         category=Category.security,
                         severity=Severity.critical,
                         file_path=file_path,
-                        line_start=idx,
-                        line_end=idx,
+                        line_start=added_line.line_number,
+                        line_end=added_line.line_number,
                         message="This change appears to introduce a hardcoded secret.",
                         suggestion=(
                             "Move the value into a secret manager or environment "
@@ -39,14 +39,14 @@ Only flag real vulnerabilities, not unlikely exploit chains."""
             interpolated_sql = "execute(" in normalized and (
                 "+" in line or "f\"" in line or "f'" in line
             )
-            if added and interpolated_sql:
+            if interpolated_sql:
                 comments.append(
                     ReviewComment(
                         category=Category.security,
                         severity=Severity.critical,
                         file_path=file_path,
-                        line_start=idx,
-                        line_end=idx,
+                        line_start=added_line.line_number,
+                        line_end=added_line.line_number,
                         message=(
                             "SQL built through string interpolation or concatenation "
                             "can allow injection."

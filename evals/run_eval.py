@@ -7,15 +7,24 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from agents.coordinator import ReviewCoordinator
+from config import settings
 from evals.benchmark import load_benchmark
 from evals.metrics import match_comments, precision_recall_f1
+
+MODEL_ALIASES = {
+    "base": settings.base_model_name,
+    "finetuned": settings.finetuned_model_name,
+    "gpt4o": settings.gpt4o_model_name,
+    "heuristic": None,
+}
 
 
 async def run_benchmark(model: str = "heuristic", smoke: bool = False) -> dict[str, float]:
     samples = load_benchmark()
     if smoke:
         samples = samples[:5]
-    coordinator = ReviewCoordinator()
+    model_name = MODEL_ALIASES.get(model, model)
+    coordinator = ReviewCoordinator(model_name=model_name)
 
     totals = {"tp": 0, "fp": 0, "fn": 0}
     for sample in samples:
@@ -29,6 +38,7 @@ async def run_benchmark(model: str = "heuristic", smoke: bool = False) -> dict[s
     output = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "model": model,
+        "model_name": model_name or "heuristic-fallback",
         "samples": len(samples),
         "totals": totals,
         **metrics,

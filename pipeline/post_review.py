@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from github import Github
 
 from agents.base import ReviewComment
@@ -22,10 +24,15 @@ def build_review_body(comments: list[ReviewComment]) -> str:
 Reviewed by CodeSentinel multi-agent pipeline."""
 
 
-async def post_pr_review(repo: str, pr_number: int, comments: list[ReviewComment]) -> None:
+async def post_pr_review(repo: str, pr_number: int, comments: list[ReviewComment]) -> bool:
     if not settings.github_token:
-        return
+        return False
 
+    await asyncio.to_thread(_post_pr_review_sync, repo, pr_number, comments)
+    return True
+
+
+def _post_pr_review_sync(repo: str, pr_number: int, comments: list[ReviewComment]) -> None:
     github = Github(settings.github_token)
     repo_obj = github.get_repo(repo)
     pr = repo_obj.get_pull(pr_number)

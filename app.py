@@ -55,7 +55,13 @@ def verify_webhook_signature(request: Request, body: bytes) -> None:
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 
-async def run_review_pipeline(pr_url: str, repo: str, pr_number: int, diff_url: str) -> ReviewState:
+async def run_review_pipeline(
+    pr_url: str,
+    repo: str,
+    pr_number: int,
+    diff_url: str,
+    session_id: str | None = None,
+) -> ReviewState:
     diff = await fetch_pr_diff(diff_url, token=settings.github_token)
     state: ReviewState = {
         "pr_url": pr_url,
@@ -65,7 +71,7 @@ async def run_review_pipeline(pr_url: str, repo: str, pr_number: int, diff_url: 
         "parsed_hunks": [],
         "final_comments": [],
         "posted_to_github": False,
-        "session_id": str(uuid4()),
+        "session_id": session_id or str(uuid4()),
     }
     return await run_pipeline(state)
 
@@ -85,12 +91,14 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks) ->
 
     if event == "pull_request" and payload.get("action") in {"opened", "synchronize"}:
         pr = payload["pull_request"]
+        review_id = str(uuid4())
         background_tasks.add_task(
             run_review_pipeline,
             pr_url=pr["html_url"],
             repo=payload["repository"]["full_name"],
             pr_number=pr["number"],
             diff_url=pr["diff_url"],
+            session_id=review_id,
         )
 
     return JSONResponse({"status": "accepted"})
@@ -101,14 +109,16 @@ async def manual_review(
     request: ManualReviewRequest,
     background_tasks: BackgroundTasks,
 ) -> dict[str, str]:
+    review_id = str(uuid4())
     background_tasks.add_task(
         run_review_pipeline,
         pr_url=request.pr_url,
         repo=request.repo,
         pr_number=request.pr_number,
         diff_url=request.diff_url,
+        session_id=review_id,
     )
-    return {"status": "accepted"}
+    return {"status": "accepted", "review_id": review_id}
 
 
 @app.get("/api/reviews")
