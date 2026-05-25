@@ -1,0 +1,180 @@
+:root {
+  color: #15201b;
+  background: #f6f7f4;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  min-height: 100vh;
+}
+
+.topbar {
+  border-bottom: 1px solid #d8ddd5;
+  background: #ffffff;
+}
+
+.brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 24px;
+}
+
+.brand svg {
+  color: #0f7a54;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 24px;
+}
+
+h2 {
+  font-size: 16px;
+}
+
+.brand p {
+  color: #657169;
+  margin-top: 3px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.mainColumn {
+  display: grid;
+  gap: 20px;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #d8ddd5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panelHeader {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e8ebe5;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid #eef0ec;
+  font-size: 14px;
+}
+
+th {
+  color: #657169;
+  font-weight: 600;
+}
+
+.empty,
+.status {
+  color: #657169;
+  padding: 18px;
+}
+
+.reviewList {
+  display: grid;
+}
+
+.reviewItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eef0ec;
+}
+
+.reviewItem div {
+  display: grid;
+  gap: 3px;
+}
+
+.reviewItem span {
+  color: #657169;
+  font-size: 13px;
+}
+
+.reviewItem a {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: #0f7a54;
+  border: 1px solid #cbd8d1;
+  border-radius: 6px;
+}
+
+.reviewForm {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #414b45;
+  font-size: 13px;
+}
+
+input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid #cdd4ce;
+  border-radius: 6px;
+  padding: 0 10px;
+  font: inherit;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  color: #ffffff;
+  background: #0f7a54;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
