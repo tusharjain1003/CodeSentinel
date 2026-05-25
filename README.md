@@ -63,11 +63,24 @@ Copy `.env.example` to `.env` and fill in values as needed.
 
 ```bash
 pip install -r requirements-training.txt
-python -m data.collect
-python -m training.train
+python -m data.collect                          # scrape PR comments from GitHub
+python -m data.pipeline                         # clean, format, train/val split
+python -m training.train                        # QLoRA fine-tune
+python -m training.merge                        # merge adapters into base model
 ```
 
-Training samples should preserve real review metadata from GitHub review comments. `data.format.format_sample` reads `path`, `line`, `original_line`, `start_line`, and `original_start_line` fields when present instead of defaulting every label to line 1.
+### Data Pipeline
+
+`python -m data.collect` scrapes merged PR review comments from 6 major open-source repos and writes to `data/raw/pr_samples.json`.
+
+`python -m data.pipeline` chains:
+1. **Clean** — filters bot comments, boilerplate, short/low-signal comments via `data/clean.py`
+2. **Format** — converts each comment into ChatML (system/user/assistant) format via `data/format.py`
+3. **Split** — 90/10 train/val shuffle with fixed seed
+
+Outputs `data/train.jsonl` and `data/val.jsonl` ready for `SFTTrainer`.
+
+`data.format.format_sample` preserves real review metadata from GitHub — reading `path`, `line`, `original_line`, `start_line`, and `original_start_line` fields when present instead of defaulting every label to line 1.
 
 After training:
 
