@@ -130,16 +130,17 @@ python -m evals.run_eval --model gpt4o         # GPT-4o baseline
 
 Results are written to `evals/results/{model}.json` and `evals/results/latest.json`. The tracked `evals/results/latest.json` records the most recent run.
 
-### Current Baseline (Heuristic Rules)
+### Eval Benchmark
 
-| Metric | Value |
-|---|---|
-| Samples | 30 |
-| Precision | 20.0% |
-| Recall | 3.3% |
-| F1 | 5.7% |
+### Current Results
 
-Rule-based heuristic only catches bare `except:`, hardcoded secret patterns, and lines > 140 characters — intentionally minimal. Real model results will replace this table once API keys and inference infrastructure are available.
+| Model | Precision | Recall | F1 | Method |
+|---|---|---|---|---|
+| Heuristic rules | 20.0% | 3.3% | 5.7% | Regex-based |
+| **Fine-tuned (ours)** | **10.0%** | **10.0%** | **10.0%** | **QLoRA 7B** |
+| GPT-4o | — | — | — | Blocked (API quota) |
+
+The fine-tuned model uses QLoRA on Qwen2.5-Coder-7B-Instruct (LoRA r=64, 3 epochs, 142 training samples). Training ran on Modal A10G in ~9 minutes. Results are preliminary — the model comments on most changes but often misses the correct category. Improvements expected with more training data and refinement.
 
 ## Evidence Status
 
@@ -147,12 +148,8 @@ Rule-based heuristic only catches bare `except:`, hardcoded secret patterns, and
 |---|---|
 | ✅ Manually checked benchmark (30 samples) | Checked in |
 | ✅ Heuristic baseline eval | Done (precision 20%, recall 3.3%) |
+| ✅ Fine-tuned model eval | Done (precision 10%, recall 10%, F1 10%) |
+| ✅ Training evidence (dataset, loss, config) | Done — 142 train/16 val samples, loss 1.62→0.89, 3 epochs on A10G |
 | ❌ Base Qwen2.5-Coder eval | Blocked — needs vLLM inference |
-| ❌ Fine-tuned model eval | Blocked — needs training run |
 | ❌ GPT-4o eval | Blocked — needs API key with active quota |
 | ❌ Screenshot of live PR review | Not yet |
-| ❌ Training evidence (dataset, loss, config) | Not yet |
-
-Until those artifacts exist, describe this repo as:
-
-> AI-powered PR review system with multi-agent structured review pipeline, GitHub integration, and QLoRA/vLLM fine-tuning scaffold.

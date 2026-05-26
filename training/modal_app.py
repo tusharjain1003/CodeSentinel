@@ -19,6 +19,11 @@ training_image = (
         "pyyaml>=6.0",
         "scipy",
     )
+    .add_local_dir(
+        ".",
+        remote_path="/repo",
+        ignore=["*.pyc", "__pycache__", ".git", ".venv", ".env", ".pytest_cache", ".ruff_cache", "node_modules"],
+    )
 )
 
 checkpoints_vol = modal.Volume.from_name("codesentinel-checkpoints", create_if_missing=True)
@@ -26,22 +31,30 @@ checkpoints_vol = modal.Volume.from_name("codesentinel-checkpoints", create_if_m
 
 @app.function(
     image=training_image,
-    gpu=modal.gpu.A10G(),
+    gpu="A10G",
     timeout=7200,
     volumes={"/checkpoints": checkpoints_vol},
     secrets=[
         modal.Secret.from_name("huggingface-secret"),
         modal.Secret.from_name("wandb-secret"),
     ],
-    mounts=[modal.Mount.from_local_dir(".", remote_path="/repo")],
 )
 def train(config_path: str = "/repo/training/config.yaml") -> None:
+    import os
+    os.chdir("/repo")
     sys.path.insert(0, "/repo")
 
     from training.merge import merge_and_save
     from training.train import train as run_train
 
-    run_train(config_path=config_path)
+    model = run_train(config_path=config_path)
+
+    import torch
+    import gc
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+    print("Cleared training memory, starting merge...")
 
     merge_and_save(
         "Qwen/Qwen2.5-Coder-7B-Instruct",

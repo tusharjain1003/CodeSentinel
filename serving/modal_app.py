@@ -2,19 +2,26 @@ import modal
 
 app = modal.App("codesentinel-serving")
 
-vllm_image = modal.Image.debian_slim().pip_install("vllm", "autoawq", "transformers")
+vllm_image = (
+    modal.Image.debian_slim()
+    .pip_install("vllm")
+)
+
+checkpoints_vol = modal.Volume.from_name("codesentinel-checkpoints", create_if_missing=True)
 
 
 @app.function(
+    gpu="A10G",
     image=vllm_image,
-    gpu=modal.gpu.A10G(),
     timeout=600,
     secrets=[modal.Secret.from_name("huggingface-secret")],
+    volumes={"/checkpoints": checkpoints_vol},
+    allow_concurrent_inputs=2,
+    container_idle_timeout=300,
 )
-@modal.web_endpoint(method="POST")
-async def serve(request: dict) -> dict:
-    return {
-        "status": "not_implemented",
-        "message": "Deploy a merged or AWQ model here, then forward requests to vLLM.",
-        "request": request,
-    }
+@modal.asgi_app()
+def openai_server():
+    from vllm.entrypoints.openai.api_server import build_app
+
+    app = build_app(model="/checkpoints/codesentinel-merged")
+    return app
