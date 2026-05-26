@@ -98,6 +98,10 @@ async def run_review_pipeline(
             "diff": diff,
             "parsed_hunks": [],
             "final_comments": existing_review.get("comments", []),
+            "agent_reviews": [],
+            "timing_ms": existing_review.get("timing_ms") or {},
+            "token_cost": existing_review.get("token_cost") or {},
+            "model_used": existing_review.get("model_used", settings.finetuned_model_name),
             "posted_to_github": False,
             "session_id": str(existing_review.get("id", review_id)),
         }
@@ -109,6 +113,10 @@ async def run_review_pipeline(
         "diff": diff,
         "parsed_hunks": [],
         "final_comments": [],
+        "agent_reviews": [],
+        "timing_ms": {},
+        "token_cost": {},
+        "model_used": settings.finetuned_model_name,
         "posted_to_github": False,
         "session_id": review_id,
     }

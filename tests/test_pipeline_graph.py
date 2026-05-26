@@ -11,6 +11,10 @@ def make_state() -> ReviewState:
         "diff": "diff --git a/app.py b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
         "parsed_hunks": [],
         "final_comments": [],
+        "agent_reviews": [],
+        "timing_ms": {},
+        "token_cost": {},
+        "model_used": "heuristic",
         "posted_to_github": False,
         "session_id": "11111111-1111-1111-1111-111111111111",
     }

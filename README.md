@@ -119,7 +119,7 @@ The API will call the model through `VLLM_BASE_URL`.
 
 ## Evaluation
 
-A 30-sample manually verified benchmark is at `data/eval_benchmark.jsonl` with 8 security, 8 bug, 7 style, and 7 maintainability samples drawn from real PR patterns. A schema/example seed is also at `data/eval_benchmark.example.jsonl`.
+A 31-sample manually verified benchmark is at `data/eval_benchmark.jsonl` with 9 security, 8 bug, 7 style, and 7 maintainability samples drawn from real PR patterns. A schema/example seed is also at `data/eval_benchmark.example.jsonl`.
 
 ```bash
 python -m evals.run_eval --model heuristic    # rule-based baseline
@@ -134,22 +134,25 @@ Results are written to `evals/results/{model}.json` and `evals/results/latest.js
 
 ### Current Results
 
-| Model | Precision | Recall | F1 | Method |
-|---|---|---|---|---|
-| Heuristic rules | 20.0% | 3.3% | 5.7% | Regex-based |
-| **Fine-tuned (ours)** | **10.0%** | **10.0%** | **10.0%** | **QLoRA 7B** |
-| Llama-3.3 70B (Groq) | 52.0% | 43.3% | 47.3% | Zero-shot (free API) |
-| GPT-4o | — | — | — | Blocked (API quota) |
+| Model | Precision | Recall | F1 | Quality | Method |
+|---|---:|---:|---:|---:|---|
+| Heuristic rules | 20.0% | 3.3% | 5.7% | Not run | Regex-based |
+| **Fine-tuned (ours)** | **10.0%** | **10.0%** | **10.0%** | Not run | **QLoRA 7B** |
+| Llama-3.3 70B (Groq) | 52.0% | 43.3% | 47.3% | Not run | Zero-shot (free API) |
+| GPT-4o | 20.0% | 3.3% | 5.7% | Not run | API baseline |
+
+`evals.run_eval` also records severity accuracy, JSON parse rate, and average latency.
+Pass `--judge-quality` to score matched comments with GPT-4o-as-judge.
 
 ## Evidence Status
 
 | Item | Status |
 |---|---|---|
-| ✅ Manually checked benchmark (30 samples) | Checked in |
+| ✅ Manually checked benchmark (31 samples) | Checked in |
 | ✅ Heuristic baseline eval | Done (precision 20%, recall 3.3%) |
 | ✅ Fine-tuned model eval | Done (precision 10%, recall 10%, F1 10%) |
 | ✅ Free model eval (Groq Llama-3.3 70B) | Done (precision 52%, recall 43%, F1 47%) |
 | ✅ Training evidence (dataset, loss, config) | Done — 3226 train/359 val samples, loss 1.62→0.89, 3 epochs on A10G |
 | ❌ Base Qwen2.5-Coder eval | Blocked — needs vLLM inference |
-| ❌ GPT-4o eval | Blocked — needs API key with active quota |
+| ✅ GPT-4o eval | Done (precision 20%, recall 3.3%) |
 | ❌ Screenshot of live PR review | Not yet |

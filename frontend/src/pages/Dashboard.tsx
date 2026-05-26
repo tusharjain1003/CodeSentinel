@@ -3,10 +3,19 @@ import { useEffect } from "react";
 import { ManualReviewForm } from "../components/ManualReviewForm";
 import { MetricTable } from "../components/MetricTable";
 import { RecentReviews } from "../components/RecentReviews";
+import { ReviewDetail } from "../components/ReviewDetail";
 import { useReviewStore } from "../state/reviewStore";
 
 export function App() {
-  const { reviews, evalMetrics, fetchReviews, fetchEvalMetrics } = useReviewStore();
+  const {
+    reviews,
+    selectedReview,
+    evalMetrics,
+    fetchReviews,
+    fetchReview,
+    fetchEvalMetrics,
+    submitFeedback
+  } = useReviewStore();
 
   useEffect(() => {
     fetchReviews();
@@ -28,7 +37,22 @@ export function App() {
       <section className="layout">
         <div className="mainColumn">
           <MetricTable metrics={evalMetrics} />
-          <RecentReviews reviews={reviews} />
+          <RecentReviews
+            reviews={reviews}
+            onSelect={(review) => {
+              if (review.id) {
+                fetchReview(review.id);
+              }
+            }}
+          />
+          <ReviewDetail
+            review={selectedReview}
+            onFeedback={async (commentIdx, rating) => {
+              if (selectedReview?.id) {
+                await submitFeedback(selectedReview.id, commentIdx, rating);
+              }
+            }}
+          />
         </div>
         <aside>
           <ManualReviewForm />

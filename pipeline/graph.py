@@ -26,6 +26,10 @@ class ReviewState(TypedDict):
     diff: str
     parsed_hunks: list[dict[str, str]]
     final_comments: list[dict[str, Any]]
+    agent_reviews: list[dict[str, Any]]
+    timing_ms: dict[str, int]
+    token_cost: dict[str, Any]
+    model_used: str
     posted_to_github: bool
     session_id: str
 
@@ -40,11 +44,27 @@ async def node_parse_pr(state: ReviewState) -> ReviewState:
 
 
 async def node_run_agents(state: ReviewState) -> ReviewState:
-    coordinator = ReviewCoordinator()
+    coordinator = ReviewCoordinator(
+        model_name=settings.finetuned_model_name,
+        fallback_model_name=settings.gpt4o_model_name,
+    )
     comments: list[ReviewComment] = []
+    agent_reviews = []
     for hunk in state["parsed_hunks"]:
-        comments.extend(await coordinator.coordinate(hunk["hunk"], hunk["file_path"]))
+        result = await coordinator.coordinate_with_reviews(hunk["hunk"], hunk["file_path"])
+        comments.extend(result.comments)
+        agent_reviews.extend(result.agent_reviews)
+        state["model_used"] = result.model_used
     state["final_comments"] = [comment.model_dump(mode="json") for comment in comments[:20]]
+    state["agent_reviews"] = [review.model_dump(mode="json") for review in agent_reviews]
+    timing_ms: dict[str, int] = {}
+    token_cost: dict[str, Any] = {}
+    for review in agent_reviews:
+        timing_ms[review.agent_name] = timing_ms.get(review.agent_name, 0) + review.timing_ms
+        if review.token_usage:
+            token_cost[review.agent_name] = review.token_usage
+    state["timing_ms"] = timing_ms
+    state["token_cost"] = token_cost
     return state
 
 
@@ -64,10 +84,10 @@ async def node_persist(state: ReviewState) -> ReviewState:
             repo=state["repo"],
             pr_number=state["pr_number"],
             diff_hash=hash_diff(state["diff"]),
-            model_used=settings.vllm_model_name,
+            model_used=state.get("model_used") or settings.finetuned_model_name,
             comments=state["final_comments"],
-            timing_ms={},
-            token_cost={},
+            timing_ms=state.get("timing_ms", {}),
+            token_cost=state.get("token_cost", {}),
         )
     except Exception as exc:
         logger.info("Review pipeline completed but persistence failed: %s", exc)

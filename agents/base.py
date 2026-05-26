@@ -112,8 +112,9 @@ class BaseAgent(ABC):
     focus: str
     system_prompt: str
 
-    def __init__(self, model_name: str | None = None) -> None:
+    def __init__(self, model_name: str | None = None, heuristic_fallback: bool = True) -> None:
         self.model_name = model_name
+        self.heuristic_fallback = heuristic_fallback
 
     async def review(self, diff: str, file_path: str) -> AgentReview:
         t0 = time.monotonic()
@@ -121,10 +122,15 @@ class BaseAgent(ABC):
             {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": self._build_prompt(diff, file_path)},
         ]
-        try:
-            comments = await self._model_review(messages, file_path)
-        except Exception:
+        if self.model_name is None:
             comments = self._heuristic_review(diff, file_path)
+        else:
+            try:
+                comments = await self._model_review(messages, file_path)
+            except Exception:
+                if not self.heuristic_fallback:
+                    raise
+                comments = self._heuristic_review(diff, file_path)
 
         return AgentReview(
             agent_name=self.name,

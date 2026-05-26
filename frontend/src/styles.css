@@ -127,7 +127,15 @@ th {
   font-size: 13px;
 }
 
-.reviewItem a {
+.reviewActions,
+.feedbackActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewItem a,
+.iconButton {
   display: inline-grid;
   place-items: center;
   width: 34px;
@@ -135,6 +143,68 @@ th {
   color: #0f7a54;
   border: 1px solid #cbd8d1;
   border-radius: 6px;
+}
+
+.iconButton {
+  min-height: 34px;
+  padding: 0;
+  background: #ffffff;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.detailHeader p,
+.detailHeader span,
+.commentMeta,
+.timingGrid span {
+  color: #657169;
+  font-size: 13px;
+}
+
+.timingGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid #eef0ec;
+}
+
+.timingGrid div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 18px;
+  border-right: 1px solid #eef0ec;
+}
+
+.commentList {
+  display: grid;
+}
+
+.commentItem {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #eef0ec;
+}
+
+.commentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.commentMeta strong {
+  color: #15201b;
+}
+
+blockquote {
+  margin: 0;
+  padding-left: 12px;
+  color: #414b45;
+  border-left: 3px solid #cbd8d1;
 }
 
 .reviewForm {
@@ -175,6 +245,10 @@ button {
 
 @media (max-width: 860px) {
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .timingGrid {
     grid-template-columns: 1fr;
   }
 }
