@@ -41,7 +41,13 @@ async def collect_repo(repo: str) -> list[dict]:
             pulls = await fetch_json(
                 client,
                 f"https://api.github.com/repos/{repo}/pulls",
-                {"state": "closed", "per_page": PER_PAGE, "page": page, "sort": "updated", "direction": "desc"},
+                {
+                    "state": "closed",
+                    "per_page": PER_PAGE,
+                    "page": page,
+                    "sort": "updated",
+                    "direction": "desc",
+                },
             )
             if not pulls:
                 break

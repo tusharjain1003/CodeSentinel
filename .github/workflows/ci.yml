@@ -13,5 +13,5 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
-      - run: python -m ruff check agents pipeline app.py config.py tests
+      - run: python -m ruff check agents data pipeline training app.py config.py tests
       - run: python -m pytest -q

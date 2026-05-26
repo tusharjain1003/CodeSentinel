@@ -38,8 +38,8 @@ checkpoints_vol = modal.Volume.from_name("codesentinel-checkpoints", create_if_m
 def train(config_path: str = "/repo/training/config.yaml") -> None:
     sys.path.insert(0, "/repo")
 
-    from training.train import train as run_train
     from training.merge import merge_and_save
+    from training.train import train as run_train
 
     run_train(config_path=config_path)
 
