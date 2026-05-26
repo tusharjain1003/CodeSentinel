@@ -9,11 +9,15 @@ from pathlib import Path
 from typing import Deque, Optional
 from uuid import uuid4
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from config import settings
 from evals.results import load_latest_result, load_model_results
@@ -22,11 +26,17 @@ from pipeline.parse_pr import diff_hash, fetch_pr_diff
 
 logger = logging.getLogger(__name__)
 rate_limit_buckets: dict[str, Deque[float]] = defaultdict(deque)
+security_scheme = HTTPBearer(auto_error=False)
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(title="CodeSentinel", version="0.1.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=origins or ["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -157,10 +167,11 @@ class FeedbackRequest(BaseModel):
 
 def verify_webhook_signature(request: Request, body: bytes) -> None:
     if settings.github_webhook_secret in ("change-me", ""):
-        raise HTTPException(
-            status_code=500,
-            detail="Webhook secret not configured. Set GITHUB_WEBHOOK_SECRET in .env",
+        logger.warning(
+            "Webhook signature verification DISABLED. Set a real GITHUB_WEBHOOK_SECRET "
+            "in production."
         )
+        return
     signature = request.headers.get("X-Hub-Signature-256", "")
     expected = "sha256=" + hmac.new(
         settings.github_webhook_secret.encode("utf-8"),
@@ -169,6 +180,15 @@ def verify_webhook_signature(request: Request, body: bytes) -> None:
     ).hexdigest()
     if not hmac.compare_digest(signature, expected):
         raise HTTPException(status_code=401, detail="Invalid signature")
+
+
+def verify_api_key(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
+) -> None:
+    if not settings.api_key:
+        return
+    if credentials is None or credentials.credentials != settings.api_key:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
 def enforce_rate_limit(request: Request) -> None:
@@ -263,10 +283,12 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks) ->
 
 
 @app.post("/api/review")
+@limiter.limit("5/minute")
 async def manual_review(
     request: Request,
     payload: ManualReviewRequest,
     background_tasks: BackgroundTasks,
+    _api_key: None = Depends(verify_api_key),
 ) -> dict[str, str]:
     enforce_rate_limit(request)
     review_id = str(uuid4())
@@ -317,7 +339,10 @@ async def get_eval_metrics() -> dict:
 
 
 @app.post("/api/feedback")
-async def submit_feedback(request: FeedbackRequest) -> dict[str, str]:
+async def submit_feedback(
+    request: FeedbackRequest,
+    _api_key: None = Depends(verify_api_key),
+) -> dict[str, str]:
     try:
         from db.access import insert_feedback
 
