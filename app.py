@@ -52,8 +52,14 @@ async def seed_demo_reviews():
                     "file_path": "src/flask/app.py",
                     "line_start": 245,
                     "line_end": 245,
-                    "message": "Bare except blocks can hide real failures and make review results unreliable.",
-                    "suggestion": "Catch the specific exception type and log or re-raise unexpected failures.",
+                    "message": (
+                        "Bare except blocks can hide real failures and make review "
+                        "results unreliable."
+                    ),
+                    "suggestion": (
+                        "Catch the specific exception type and log or re-raise "
+                        "unexpected failures."
+                    ),
                     "confidence": 0.72,
                 },
                 {
@@ -63,7 +69,10 @@ async def seed_demo_reviews():
                     "line_start": 89,
                     "line_end": 89,
                     "message": "This change appears to introduce a hardcoded secret.",
-                    "suggestion": "Move the value into a secret manager or environment variable and rotate the exposed credential.",
+                    "suggestion": (
+                        "Move the value into a secret manager or environment variable "
+                        "and rotate the exposed credential."
+                    ),
                     "confidence": 0.82,
                 },
                 {
@@ -73,7 +82,10 @@ async def seed_demo_reviews():
                     "line_start": 156,
                     "line_end": 156,
                     "message": "Dictionary access via get may return None if the key is missing.",
-                    "suggestion": "Provide an explicit default or validate the value before using it.",
+                    "suggestion": (
+                        "Provide an explicit default or validate the value before "
+                        "using it."
+                    ),
                     "confidence": 0.55,
                 },
                 {
@@ -82,8 +94,14 @@ async def seed_demo_reviews():
                     "file_path": "src/flask/db.py",
                     "line_start": 42,
                     "line_end": 42,
-                    "message": "SQL built through string interpolation or concatenation can allow injection.",
-                    "suggestion": "Use parameterized queries instead of constructing SQL strings directly.",
+                    "message": (
+                        "SQL built through string interpolation or concatenation can "
+                        "allow injection."
+                    ),
+                    "suggestion": (
+                        "Use parameterized queries instead of constructing SQL "
+                        "strings directly."
+                    ),
                     "confidence": 0.78,
                 },
                 {
@@ -92,12 +110,19 @@ async def seed_demo_reviews():
                     "file_path": "src/flask/views.py",
                     "line_start": 312,
                     "line_end": 312,
-                    "message": "This added line is long enough to be difficult to scan during reviews.",
+                    "message": (
+                        "This added line is long enough to be difficult to scan "
+                        "during reviews."
+                    ),
                     "suggestion": "Break it into named intermediate values or multiple lines.",
                     "confidence": 0.61,
                 },
             ],
-            timing_ms={"bug_detector": 150, "security_scanner": 200, "style_reviewer": 100},
+            timing_ms={
+                "bug_detector": 150,
+                "security_scanner": 200,
+                "style_reviewer": 100,
+            },
         )
         logger.info("Seeded demo review for dashboard screenshots")
     except Exception as exc:

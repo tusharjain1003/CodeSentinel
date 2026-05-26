@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 from typing import Any
 
-
 _reviews: dict[str, dict[str, Any]] = {}
 _feedback: list[dict[str, Any]] = []
 
@@ -55,9 +54,11 @@ async def insert_feedback(
     rating: int,
     correction: str | None = None,
 ) -> None:
-    _feedback.append({
-        "review_id": review_id,
-        "comment_idx": comment_idx,
-        "rating": rating,
-        "correction": correction,
-    })
+    _feedback.append(
+        {
+            "review_id": review_id,
+            "comment_idx": comment_idx,
+            "rating": rating,
+            "correction": correction,
+        }
+    )

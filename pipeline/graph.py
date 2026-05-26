@@ -71,7 +71,11 @@ async def node_run_agents(state: ReviewState) -> ReviewState:
 async def node_post_review(state: ReviewState) -> ReviewState:
     comments = [ReviewComment(**comment) for comment in state["final_comments"]]
     try:
-        state["posted_to_github"] = await post_pr_review(state["repo"], state["pr_number"], comments)
+        state["posted_to_github"] = await post_pr_review(
+            state["repo"],
+            state["pr_number"],
+            comments,
+        )
     except Exception as exc:
         logger.info("Failed to post review to GitHub: %s", exc)
         state["posted_to_github"] = False

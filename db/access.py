@@ -30,12 +30,21 @@ async def _get_store():
     if _use_memory:
         if _memory_store is None:
             from db.memory import (  # noqa: PLC0415
-                insert_feedback as mem_insert_feedback,
-                insert_review as mem_insert_review,
-                list_reviews as mem_list_reviews,
                 get_review as mem_get_review,
+            )
+            from db.memory import (
                 get_review_by_diff_hash as mem_get_review_by_diff_hash,
             )
+            from db.memory import (
+                insert_feedback as mem_insert_feedback,
+            )
+            from db.memory import (
+                insert_review as mem_insert_review,
+            )
+            from db.memory import (
+                list_reviews as mem_list_reviews,
+            )
+
             _memory_store = {
                 "list_reviews": mem_list_reviews,
                 "get_review": mem_get_review,
@@ -134,8 +143,15 @@ async def insert_review(
     store = await _get_store()
     if store:
         return await store["insert_review"](
-            review_id, pr_url, repo, pr_number, diff_hash, model_used,
-            comments, timing_ms, token_cost,
+            review_id,
+            pr_url,
+            repo,
+            pr_number,
+            diff_hash,
+            model_used,
+            comments,
+            timing_ms,
+            token_cost,
         )
 
     try:
@@ -144,7 +160,8 @@ async def insert_review(
             await pool.execute(
                 """
                 INSERT INTO reviews (
-                    id, pr_url, repo, pr_number, diff_hash, model_used, comments, timing_ms, token_cost
+                    id, pr_url, repo, pr_number, diff_hash, model_used,
+                    comments, timing_ms, token_cost
                 )
                 VALUES ($1::uuid, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9::jsonb)
                 ON CONFLICT (id) DO UPDATE SET
