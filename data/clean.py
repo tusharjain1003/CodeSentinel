@@ -1,10 +1,10 @@
-BOILERPLATE = {"thanks", "thank you", "lgtm", "looks good", "nit"}
+BOILERPLATE = {"thanks", "thank you", "lgtm", "looks good"}
 
 
 def is_valid_comment(comment: dict) -> bool:
     body = (comment.get("body") or "").strip()
     lowered = body.lower()
-    if len(body) < 30 or len(body) > 2000:
+    if len(body) < 15 or len(body) > 2000:
         return False
     if lowered in BOILERPLATE or lowered.startswith("lgtm"):
         return False
@@ -12,22 +12,17 @@ def is_valid_comment(comment: dict) -> bool:
         return False
 
     actionable_signals = [
-        "should",
-        "could",
-        "consider",
-        "instead",
-        "bug",
-        "issue",
-        "error",
-        "null",
-        "race condition",
-        "overflow",
-        "injection",
-        "vulnerability",
-        "refactor",
-        "rename",
-        "extract",
-        "missing",
+        "should", "could", "consider", "instead",
+        "bug", "issue", "error", "null", "crash",
+        "race condition", "overflow", "injection", "vulnerability",
+        "refactor", "rename", "extract", "missing",
+        "fix", "wrong", "incorrect", "problem", "broken",
+        "improve", "suggest", "need", "must", "check",
+        "verify", "ensure", "prevent", "avoid", "handle",
+        "add", "remove", "change", "update", "don't",
+        "doesn't", "won't", "never", "always",
+        "leak", "deadlock", "corrupt", "loss",
+        "unsafe", "deprecated", "typo", "duplicate",
     ]
     return any(signal in lowered for signal in actionable_signals)
 

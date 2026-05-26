@@ -6,9 +6,9 @@ from typing import Any
 
 def infer_severity(comment: str) -> str:
     lowered = comment.lower()
-    if any(term in lowered for term in ("critical", "exploit", "data loss", "injection")):
+    if any(term in lowered for term in ("critical", "exploit", "data loss", "injection", "vulnerability")):
         return "critical"
-    if any(term in lowered for term in ("bug", "incorrect", "breaks", "race")):
+    if any(term in lowered for term in ("bug", "incorrect", "breaks", "race", "crash", "deadlock", "corrupt")):
         return "major"
     if lowered.startswith("nit"):
         return "nit"
@@ -17,11 +17,21 @@ def infer_severity(comment: str) -> str:
 
 def infer_category(comment: str) -> str:
     lowered = comment.lower()
-    if any(term in lowered for term in ("injection", "xss", "csrf", "secret", "auth")):
+    if any(term in lowered for term in (
+        "injection", "xss", "csrf", "secret", "auth",
+        "vulnerability", "exploit", "ssl", "tls",
+        "encrypt", "permission", "access control",
+        "sanitize", "escape", "sql", "command injection",
+    )):
         return "security"
-    if any(term in lowered for term in ("bug", "null", "error", "race", "incorrect")):
+    if any(term in lowered for term in (
+        "bug", "null", "error", "race", "incorrect",
+        "crash", "deadlock", "corrupt", "leak",
+        "off-by-one", "index", "overflow",
+        "undefined", "exception", "fail",
+    )):
         return "bug"
-    if any(term in lowered for term in ("rename", "format", "style")):
+    if any(term in lowered for term in ("rename", "format", "style", "typo")):
         return "style"
     return "maintainability"
 

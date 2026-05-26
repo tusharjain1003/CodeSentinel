@@ -15,6 +15,18 @@ REPOS = [
     "pallets/flask",
     "psf/requests",
     "pytorch/pytorch",
+    "django/django",
+    "kubernetes/kubernetes",
+    "microsoft/vscode",
+    "nodejs/node",
+    "rust-lang/rust",
+    "rails/rails",
+    "homebrew/brew",
+    "ansible/ansible",
+    "spring-projects/spring-framework",
+    "scikit-learn/scikit-learn",
+    "numpy/numpy",
+    "apache/airflow",
 ]
 
 
@@ -23,18 +35,24 @@ async def fetch_json(client: httpx.AsyncClient, url: str, params: dict | None = 
     if settings.github_token:
         headers["Authorization"] = f"Bearer {settings.github_token}"
     response = await client.get(url, params=params, headers=headers)
+    if response.status_code == 429:
+        import time
+        retry_after = int(response.headers.get("retry-after", 60))
+        print(f"    Rate limited, waiting {retry_after}s...")
+        time.sleep(retry_after)
+        response = await client.get(url, params=params, headers=headers)
     response.raise_for_status()
     return response.json()
 
 
-TARGET_PER_REPO = 30
+TARGET_PER_REPO = 50
 PER_PAGE = 100
-MAX_PAGES = 5
+MAX_PAGES = 10
 
 
 async def collect_repo(repo: str) -> list[dict]:
     print(f"  Collecting from {repo} ...")
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         samples: list[dict] = []
         page = 1
         while len(samples) < TARGET_PER_REPO and page <= MAX_PAGES:
@@ -55,18 +73,26 @@ async def collect_repo(repo: str) -> list[dict]:
             for pr in pulls:
                 if not pr.get("merged_at"):
                     continue
-                comments = await fetch_json(
-                    client,
-                    f"https://api.github.com/repos/{repo}/pulls/{pr['number']}/comments",
-                )
-                if len(comments) < 2:
+                try:
+                    comments = await fetch_json(
+                        client,
+                        f"https://api.github.com/repos/{repo}/pulls/{pr['number']}/comments",
+                    )
+                except Exception as exc:
+                    print(f"      Skipping PR #{pr['number']}: {exc}")
                     continue
-                diff_response = await client.get(
-                    pr["diff_url"],
-                    headers={"Accept": "application/vnd.github.v3.diff"},
-                    follow_redirects=True,
-                )
-                diff_response.raise_for_status()
+                if len(comments) < 1:
+                    continue
+                try:
+                    diff_response = await client.get(
+                        pr["diff_url"],
+                        headers={"Accept": "application/vnd.github.v3.diff"},
+                        follow_redirects=True,
+                    )
+                    diff_response.raise_for_status()
+                except Exception as exc:
+                    print(f"      Skipping diff for PR #{pr['number']}: {exc}")
+                    continue
                 samples.append(
                     {
                         "repo": repo,
@@ -84,14 +110,19 @@ async def collect_repo(repo: str) -> list[dict]:
 
 
 async def main() -> None:
-    results = []
-    for repo in REPOS:
-        repo_samples = await collect_repo(repo)
-        results.extend(repo_samples)
-        print(f"  Running total: {len(results)} samples")
+    sem = asyncio.Semaphore(4)
+
+    async def limited(repo: str) -> list[dict]:
+        async with sem:
+            return await collect_repo(repo)
+
+    results = await asyncio.gather(*[limited(repo) for repo in REPOS])
+    all_samples = []
+    for repo_samples in results:
+        all_samples.extend(repo_samples)
     out_path = "data/raw/pr_samples.json"
-    Path(out_path).write_text(json.dumps(results, indent=2), encoding="utf-8")
-    print(f"Wrote {len(results)} samples to {out_path}")
+    Path(out_path).write_text(json.dumps(all_samples, indent=2), encoding="utf-8")
+    print(f"\nWrote {len(all_samples)} samples to {out_path}")
 
 
 if __name__ == "__main__":
