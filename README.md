@@ -65,9 +65,23 @@ Copy `.env.example` to `.env` and fill in values as needed.
 pip install -r requirements-training.txt
 python -m data.collect                          # scrape PR comments from GitHub
 python -m data.pipeline                         # clean, format, train/val split
-python -m training.train                        # QLoRA fine-tune
+python -m training.train                        # QLoRA fine-tune (requires GPU)
 python -m training.merge                        # merge adapters into base model
 ```
+
+### Training on Modal (cloud GPU, no local GPU needed)
+
+```bash
+pip install modal
+modal setup  # authenticate
+modal run training/modal_app.py
+```
+
+Requires two Modal secrets:
+- `huggingface-secret` with `HF_TOKEN` to download Qwen2.5-Coder-7B-Instruct
+- `wandb-secret` with `WANDB_API_KEY` for experiment logging (optional)
+
+Runs on A10G, persists checkpoints to a Modal Volume, and auto-merges adapters after training.
 
 ### Data Pipeline
 
