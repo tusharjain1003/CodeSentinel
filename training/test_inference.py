@@ -1,6 +1,4 @@
-import asyncio
 import json
-import sys
 
 import modal
 
@@ -39,7 +37,10 @@ def test_inference() -> str:
     )
     model.config.use_cache = True
 
-    system_prompt = "You are an expert code reviewer. Analyze the provided code diff and identify issues. Respond only with a valid JSON object matching the ReviewComment schema."
+    system_prompt = (
+        "You are an expert code reviewer. Analyze the provided code diff and identify "
+        "issues. Respond only with a valid JSON object matching the ReviewComment schema."
+    )
     user_prompt = """Review this code change in `src/auth.py`:
 
 ```diff

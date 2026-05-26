@@ -22,7 +22,10 @@ training_image = (
     .add_local_dir(
         ".",
         remote_path="/repo",
-        ignore=["*.pyc", "__pycache__", ".git", ".venv", ".env", ".pytest_cache", ".ruff_cache", "node_modules"],
+        ignore=[
+            "*.pyc", "__pycache__", ".git", ".venv", ".env",
+            ".pytest_cache", ".ruff_cache", "node_modules",
+        ],
     )
 )
 
@@ -40,7 +43,11 @@ checkpoints_vol = modal.Volume.from_name("codesentinel-checkpoints", create_if_m
     ],
 )
 def train(config_path: str = "/repo/training/config.yaml") -> None:
+    import gc
     import os
+
+    import torch
+
     os.chdir("/repo")
     sys.path.insert(0, "/repo")
 
@@ -49,8 +56,6 @@ def train(config_path: str = "/repo/training/config.yaml") -> None:
 
     model = run_train(config_path=config_path)
 
-    import torch
-    import gc
     del model
     gc.collect()
     torch.cuda.empty_cache()

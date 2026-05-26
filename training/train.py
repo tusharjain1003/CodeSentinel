@@ -80,7 +80,10 @@ def train(config_path: str = "training/config.yaml"):
     val_dataset = load_dataset("json", data_files="data/val.jsonl", split="train")
     print(f"Train samples: {len(train_dataset)}, Val samples: {len(val_dataset)}")
 
-    effective_bs = cfg["training"]["per_device_train_batch_size"] * cfg["training"]["gradient_accumulation_steps"]
+    effective_bs = (
+        cfg["training"]["per_device_train_batch_size"]
+        * cfg["training"]["gradient_accumulation_steps"]
+    )
     steps_per_epoch = max(1, len(train_dataset) // effective_bs)
     total_steps = steps_per_epoch * cfg["training"]["num_train_epochs"]
 
