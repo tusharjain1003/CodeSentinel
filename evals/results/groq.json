@@ -1,0 +1,10 @@
+{
+  "model": "groq-llama3.3-70b",
+  "samples": 30,
+  "tp": 13,
+  "fp": 12,
+  "fn": 17,
+  "precision": 0.52,
+  "recall": 0.433,
+  "f1": 0.473
+}

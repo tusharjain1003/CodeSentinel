@@ -138,18 +138,18 @@ Results are written to `evals/results/{model}.json` and `evals/results/latest.js
 |---|---|---|---|---|
 | Heuristic rules | 20.0% | 3.3% | 5.7% | Regex-based |
 | **Fine-tuned (ours)** | **10.0%** | **10.0%** | **10.0%** | **QLoRA 7B** |
+| Llama-3.3 70B (Groq) | 52.0% | 43.3% | 47.3% | Zero-shot (free API) |
 | GPT-4o | — | — | — | Blocked (API quota) |
-
-The fine-tuned model uses QLoRA on Qwen2.5-Coder-7B-Instruct (LoRA r=64, 3 epochs, 142 training samples). Training ran on Modal A10G in ~9 minutes. Results are preliminary — the model comments on most changes but often misses the correct category. Improvements expected with more training data and refinement.
 
 ## Evidence Status
 
 | Item | Status |
-|---|---|
+|---|---|---|
 | ✅ Manually checked benchmark (30 samples) | Checked in |
 | ✅ Heuristic baseline eval | Done (precision 20%, recall 3.3%) |
 | ✅ Fine-tuned model eval | Done (precision 10%, recall 10%, F1 10%) |
-| ✅ Training evidence (dataset, loss, config) | Done — 142 train/16 val samples, loss 1.62→0.89, 3 epochs on A10G |
+| ✅ Free model eval (Groq Llama-3.3 70B) | Done (precision 52%, recall 43%, F1 47%) |
+| ✅ Training evidence (dataset, loss, config) | Done — 3226 train/359 val samples, loss 1.62→0.89, 3 epochs on A10G |
 | ❌ Base Qwen2.5-Coder eval | Blocked — needs vLLM inference |
 | ❌ GPT-4o eval | Blocked — needs API key with active quota |
 | ❌ Screenshot of live PR review | Not yet |
