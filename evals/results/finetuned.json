@@ -1,0 +1,10 @@
+{
+  "model": "finetuned",
+  "samples": 30,
+  "tp": 3,
+  "fp": 27,
+  "fn": 27,
+  "precision": 0.1,
+  "recall": 0.1,
+  "f1": 0.1
+}
