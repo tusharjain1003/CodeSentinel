@@ -15,6 +15,7 @@ MODEL_ALIASES = {
     "base": settings.base_model_name,
     "finetuned": settings.finetuned_model_name,
     "gpt4o": settings.gpt4o_model_name,
+    "groq": settings.groq_model_name,
     "heuristic": None,
 }
 

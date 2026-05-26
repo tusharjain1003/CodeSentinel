@@ -12,12 +12,25 @@ _client = AsyncOpenAI(
     api_key=settings.openai_api_key or "not-needed",
 )
 _openai_client = AsyncOpenAI(api_key=settings.openai_api_key or "not-needed")
+_groq_client = (
+    AsyncOpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=settings.groq_api_key,
+    )
+    if settings.groq_api_key
+    else None
+)
 
 
 def _select_client(model: str | None = None) -> AsyncOpenAI:
     model_name = model or settings.vllm_model_name
     if model_name == settings.gpt4o_model_name or model_name.startswith("gpt-"):
         return _openai_client
+    if model_name == settings.groq_model_name or "groq" in str(model_name).lower():
+        if _groq_client is None:
+            msg = "GROQ_API_KEY not configured in .env"
+            raise ValueError(msg)
+        return _groq_client
     return _client
 
 

@@ -5,11 +5,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     openai_api_key: str = ""
+    groq_api_key: str = ""
     vllm_base_url: str = "http://localhost:8000/v1"
     vllm_model_name: str = "codesentinel-codeqwen-7b"
     base_model_name: str = "Qwen/Qwen2.5-Coder-7B-Instruct"
     finetuned_model_name: str = "codesentinel-codeqwen-7b"
     gpt4o_model_name: str = "gpt-4o"
+    groq_model_name: str = "llama3-70b-8192"
     github_token: str = ""
     github_webhook_secret: str = "change-me"
     database_url: str = "postgresql://postgres:postgres@localhost:5432/codesentinel"
