@@ -115,7 +115,17 @@ sequenceDiagram
 | Frontend | React, Vite, Zustand, lucide-react |
 | Deployment | Docker, Railway app config, Modal GPU scaffolds |
 
-## Quick Start
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/dashboard-with-detail.png" alt="Dashboard with review detail open" width="800">
+</p>
+
+| Model Comparison | Review Detail | Manual Review |
+|:---:|:---:|:---:|
+| <img src="screenshots/model-comparison.png" alt="Model comparison" width="300"> | <img src="screenshots/review-detail-varied.png" alt="Review detail with comments" width="300"> | <img src="screenshots/manual-review-form-filled.png" alt="Manual review form" width="300"> |
+
+### Quick Start
 
 ```bash
 python3 -m venv .venv
@@ -313,6 +323,9 @@ The React dashboard shows:
 
 When `frontend/dist` exists, FastAPI serves the built dashboard from `/`.
 
+See the [Screenshots](#screenshots) section above for visual walkthroughs of each
+dashboard feature.
+
 ## Deployment
 
 ### Docker
@@ -376,5 +389,4 @@ The remaining high-value work is:
 2. Run base Qwen2.5-Coder through vLLM and check in `evals/results/base.json`.
 3. Add W&B run links, final train/eval loss, JSON parse rate, and HF model link.
 4. Deploy Railway API/frontend and Modal vLLM endpoint.
-5. Capture a live GitHub PR review screenshot or GIF.
-6. Add GitHub API retry/backoff and a no-issues-found review comment path.
+5. Add GitHub API retry/backoff and a no-issues-found review comment path.

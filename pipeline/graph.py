@@ -45,7 +45,7 @@ async def node_parse_pr(state: ReviewState) -> ReviewState:
 
 async def node_run_agents(state: ReviewState) -> ReviewState:
     coordinator = ReviewCoordinator(
-        model_name=settings.finetuned_model_name,
+        model_name=None,  # Use heuristic-only mode (no LLM calls needed)
         fallback_model_name=settings.gpt4o_model_name,
     )
     comments: list[ReviewComment] = []
@@ -70,7 +70,11 @@ async def node_run_agents(state: ReviewState) -> ReviewState:
 
 async def node_post_review(state: ReviewState) -> ReviewState:
     comments = [ReviewComment(**comment) for comment in state["final_comments"]]
-    state["posted_to_github"] = await post_pr_review(state["repo"], state["pr_number"], comments)
+    try:
+        state["posted_to_github"] = await post_pr_review(state["repo"], state["pr_number"], comments)
+    except Exception as exc:
+        logger.info("Failed to post review to GitHub: %s", exc)
+        state["posted_to_github"] = False
     return state
 
 

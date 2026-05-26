@@ -33,6 +33,77 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def seed_demo_reviews():
+    try:
+        from db.memory import insert_review as mem_insert  # noqa: PLC0415
+
+        await mem_insert(
+            review_id="00000000-0000-0000-0000-000000000001",
+            pr_url="https://github.com/pallets/flask/pull/4300",
+            repo="pallets/flask",
+            pr_number=4300,
+            diff_hash="abc123",
+            model_used="heuristic",
+            comments=[
+                {
+                    "category": "bug",
+                    "severity": "critical",
+                    "file_path": "src/flask/app.py",
+                    "line_start": 245,
+                    "line_end": 245,
+                    "message": "Bare except blocks can hide real failures and make review results unreliable.",
+                    "suggestion": "Catch the specific exception type and log or re-raise unexpected failures.",
+                    "confidence": 0.72,
+                },
+                {
+                    "category": "security",
+                    "severity": "critical",
+                    "file_path": "src/flask/config.py",
+                    "line_start": 89,
+                    "line_end": 89,
+                    "message": "This change appears to introduce a hardcoded secret.",
+                    "suggestion": "Move the value into a secret manager or environment variable and rotate the exposed credential.",
+                    "confidence": 0.82,
+                },
+                {
+                    "category": "bug",
+                    "severity": "minor",
+                    "file_path": "src/flask/helpers.py",
+                    "line_start": 156,
+                    "line_end": 156,
+                    "message": "Dictionary access via get may return None if the key is missing.",
+                    "suggestion": "Provide an explicit default or validate the value before using it.",
+                    "confidence": 0.55,
+                },
+                {
+                    "category": "security",
+                    "severity": "major",
+                    "file_path": "src/flask/db.py",
+                    "line_start": 42,
+                    "line_end": 42,
+                    "message": "SQL built through string interpolation or concatenation can allow injection.",
+                    "suggestion": "Use parameterized queries instead of constructing SQL strings directly.",
+                    "confidence": 0.78,
+                },
+                {
+                    "category": "maintainability",
+                    "severity": "nit",
+                    "file_path": "src/flask/views.py",
+                    "line_start": 312,
+                    "line_end": 312,
+                    "message": "This added line is long enough to be difficult to scan during reviews.",
+                    "suggestion": "Break it into named intermediate values or multiple lines.",
+                    "confidence": 0.61,
+                },
+            ],
+            timing_ms={"bug_detector": 150, "security_scanner": 200, "style_reviewer": 100},
+        )
+        logger.info("Seeded demo review for dashboard screenshots")
+    except Exception as exc:
+        logger.info("Could not seed demo review (non-critical): %s", exc)
+
+
 class ManualReviewRequest(BaseModel):
     pr_url: str
     repo: str

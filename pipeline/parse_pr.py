@@ -58,7 +58,7 @@ async def fetch_pr_diff(diff_url: str, token: str = "") -> str:
     headers = {"Accept": "application/vnd.github.v3.diff"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
         response = await client.get(diff_url, headers=headers)
         response.raise_for_status()
         return response.text
