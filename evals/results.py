@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 RESULTS_DIR = Path("evals/results")
-MODEL_KEYS = ("base", "finetuned", "gpt4o")
+MODEL_KEYS = ("base", "finetuned", "gpt4o", "groq", "heuristic")
 
 
 def load_result_file(path: Path) -> dict[str, Any] | None:

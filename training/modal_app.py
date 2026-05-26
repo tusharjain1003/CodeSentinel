@@ -45,8 +45,10 @@ checkpoints_vol = modal.Volume.from_name("codesentinel-checkpoints", create_if_m
 def train(config_path: str = "/repo/training/config.yaml") -> None:
     import gc
     import os
+    from pathlib import Path
 
     import torch
+    import yaml
 
     os.chdir("/repo")
     sys.path.insert(0, "/repo")
@@ -61,9 +63,14 @@ def train(config_path: str = "/repo/training/config.yaml") -> None:
     torch.cuda.empty_cache()
     print("Cleared training memory, starting merge...")
 
+    with open(config_path, encoding="utf-8") as file:
+        cfg = yaml.safe_load(file)
+    output_dir = Path(cfg["training"]["output_dir"])
+    adapter_path = output_dir if output_dir.is_absolute() else Path("/repo") / output_dir
+
     merge_and_save(
-        "Qwen/Qwen2.5-Coder-7B-Instruct",
-        "/repo/checkpoints",
+        cfg["model"]["base"],
+        str(adapter_path),
         "/checkpoints/codesentinel-merged",
     )
     print("Training complete. Merged model saved to /checkpoints/codesentinel-merged")

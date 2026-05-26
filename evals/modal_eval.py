@@ -14,7 +14,16 @@ eval_image = (
     .add_local_dir(
         ".",
         remote_path="/repo",
-        ignore=["*.pyc", "__pycache__", ".git", ".venv", ".env", ".pytest_cache", ".ruff_cache", "node_modules"],
+        ignore=[
+            "*.pyc",
+            "__pycache__",
+            ".git",
+            ".venv",
+            ".env",
+            ".pytest_cache",
+            ".ruff_cache",
+            "node_modules",
+        ],
     )
 )
 
@@ -25,11 +34,18 @@ def build_prompt(diff: str, file_path: str) -> list[dict]:
     return [
         {
             "role": "system",
-            "content": "You are an expert code reviewer. Analyze the provided code diff and identify issues. Respond only with a valid JSON object matching the ReviewComment schema.",
+            "content": (
+                "You are an expert code reviewer. Analyze the provided code diff and "
+                "identify issues. Respond only with a valid JSON object matching the "
+                "ReviewComment schema."
+            ),
         },
         {
             "role": "user",
-            "content": f"Review this code change in `{file_path}`:\n\n```diff\n{diff}\n```\n\nIdentify any issues. Respond with a JSON ReviewComment object.",
+            "content": (
+                f"Review this code change in `{file_path}`:\n\n```diff\n{diff}\n```\n\n"
+                "Identify any issues. Respond with a JSON ReviewComment object."
+            ),
         },
     ]
 
@@ -87,12 +103,14 @@ def eval_benchmark() -> str:
             pad_token_id=tokenizer.eos_token_id,
         )
 
-        response = tokenizer.decode(outputs[0][inputs.shape[1]:], skip_special_tokens=True)
+        response = tokenizer.decode(outputs[0][inputs.shape[1] :], skip_special_tokens=True)
         print(f"\n--- Sample {i+1}/{len(samples)} ---")
 
         try:
             predicted_json = json.loads(response)
-            predicted_list = [predicted_json] if isinstance(predicted_json, dict) else predicted_json
+            predicted_list = (
+                [predicted_json] if isinstance(predicted_json, dict) else predicted_json
+            )
         except json.JSONDecodeError:
             predicted_list = []
 
@@ -102,9 +120,11 @@ def eval_benchmark() -> str:
 
         for pred in predicted_list:
             matched = False
-            for j, truth in enumerate(ground_truth):
+            for truth in ground_truth:
                 same_cat = pred.get("category") == truth.get("category")
-                close_line = abs(pred.get("line_start", 0) - int(truth.get("line_start", 0))) <= 3
+                close_line = (
+                    abs(pred.get("line_start", 0) - int(truth.get("line_start", 0))) <= 3
+                )
                 if same_cat and close_line:
                     matched = True
                     sample_fn -= 1
@@ -117,7 +137,11 @@ def eval_benchmark() -> str:
         tp += sample_tp
         fp += sample_fp
         fn += sample_fn
-        print(f"  Sample: tp={sample_tp}, fp={sample_fp}, fn={sample_fn}, total_truth={len(ground_truth)}")
+        print(
+            "  Sample: "
+            f"tp={sample_tp}, fp={sample_fp}, fn={sample_fn}, "
+            f"total_truth={len(ground_truth)}"
+        )
 
     precision = tp / (tp + fp) if tp + fp else 0.0
     recall = tp / (tp + fn) if tp + fn else 0.0

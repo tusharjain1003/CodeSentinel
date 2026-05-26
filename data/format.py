@@ -6,9 +6,15 @@ from typing import Any
 
 def infer_severity(comment: str) -> str:
     lowered = comment.lower()
-    if any(term in lowered for term in ("critical", "exploit", "data loss", "injection", "vulnerability")):
+    if any(
+        term in lowered
+        for term in ("critical", "exploit", "data loss", "injection", "vulnerability")
+    ):
         return "critical"
-    if any(term in lowered for term in ("bug", "incorrect", "breaks", "race", "crash", "deadlock", "corrupt")):
+    if any(
+        term in lowered
+        for term in ("bug", "incorrect", "breaks", "race", "crash", "deadlock", "corrupt")
+    ):
         return "major"
     if lowered.startswith("nit"):
         return "nit"

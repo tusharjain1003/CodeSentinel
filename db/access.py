@@ -43,6 +43,22 @@ async def get_review(review_id: str) -> dict[str, Any] | None:
         return _normalize_row(row) if row else None
 
 
+async def get_review_by_diff_hash(diff_hash: str) -> dict[str, Any] | None:
+    pool = await get_pool()
+    async with pool:
+        row = await pool.fetchrow(
+            """
+            SELECT *
+            FROM reviews
+            WHERE diff_hash = $1
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            diff_hash,
+        )
+        return _normalize_row(row) if row else None
+
+
 async def insert_review(
     review_id: str,
     pr_url: str,

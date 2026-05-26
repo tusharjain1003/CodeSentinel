@@ -3,20 +3,25 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
-from typing import Optional
+import time
+from collections import defaultdict, deque
+from pathlib import Path
+from typing import Deque, Optional
 from uuid import uuid4
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from config import settings
 from evals.results import load_latest_result, load_model_results
 from pipeline.graph import ReviewState, run_pipeline
-from pipeline.parse_pr import fetch_pr_diff
+from pipeline.parse_pr import diff_hash, fetch_pr_diff
 
 logger = logging.getLogger(__name__)
+rate_limit_buckets: dict[str, Deque[float]] = defaultdict(deque)
 
 app = FastAPI(title="CodeSentinel", version="0.1.0")
 app.add_middleware(
@@ -55,6 +60,19 @@ def verify_webhook_signature(request: Request, body: bytes) -> None:
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 
+def enforce_rate_limit(request: Request) -> None:
+    if settings.rate_limit_per_minute <= 0:
+        return
+    client_host = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    bucket = rate_limit_buckets[client_host]
+    while bucket and now - bucket[0] > 60:
+        bucket.popleft()
+    if len(bucket) >= settings.rate_limit_per_minute:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+    bucket.append(now)
+
+
 async def run_review_pipeline(
     pr_url: str,
     repo: str,
@@ -63,6 +81,27 @@ async def run_review_pipeline(
     session_id: str | None = None,
 ) -> ReviewState:
     diff = await fetch_pr_diff(diff_url, token=settings.github_token)
+    review_id = session_id or str(uuid4())
+    diff_digest = diff_hash(diff)
+    try:
+        from db.access import get_review_by_diff_hash
+
+        existing_review = await get_review_by_diff_hash(diff_digest)
+    except Exception as exc:
+        logger.info("Could not check cached review for %s: %s", pr_url, exc)
+        existing_review = None
+    if existing_review:
+        return {
+            "pr_url": pr_url,
+            "repo": repo,
+            "pr_number": pr_number,
+            "diff": diff,
+            "parsed_hunks": [],
+            "final_comments": existing_review.get("comments", []),
+            "posted_to_github": False,
+            "session_id": str(existing_review.get("id", review_id)),
+        }
+
     state: ReviewState = {
         "pr_url": pr_url,
         "repo": repo,
@@ -71,7 +110,7 @@ async def run_review_pipeline(
         "parsed_hunks": [],
         "final_comments": [],
         "posted_to_github": False,
-        "session_id": session_id or str(uuid4()),
+        "session_id": review_id,
     }
     return await run_pipeline(state)
 
@@ -106,16 +145,18 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks) ->
 
 @app.post("/api/review")
 async def manual_review(
-    request: ManualReviewRequest,
+    request: Request,
+    payload: ManualReviewRequest,
     background_tasks: BackgroundTasks,
 ) -> dict[str, str]:
+    enforce_rate_limit(request)
     review_id = str(uuid4())
     background_tasks.add_task(
         run_review_pipeline,
-        pr_url=request.pr_url,
-        repo=request.repo,
-        pr_number=request.pr_number,
-        diff_url=request.diff_url,
+        pr_url=payload.pr_url,
+        repo=payload.repo,
+        pr_number=payload.pr_number,
+        diff_url=payload.diff_url,
         session_id=review_id,
     )
     return {"status": "accepted", "review_id": review_id}
@@ -169,3 +210,8 @@ async def submit_feedback(request: FeedbackRequest) -> dict[str, str]:
     except Exception as exc:
         logger.info("Feedback accepted but DB write failed: %s", exc)
     return {"status": "accepted"}
+
+
+frontend_dist = Path(__file__).parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")

@@ -7,7 +7,9 @@ type Props = {
 const labels: Record<string, string> = {
   finetuned: "Fine-tuned",
   base: "Base",
-  gpt4o: "GPT-4o"
+  gpt4o: "GPT-4o",
+  groq: "Groq Llama",
+  heuristic: "Heuristic"
 };
 
 function formatPercent(value: number) {

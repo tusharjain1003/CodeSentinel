@@ -32,7 +32,9 @@ export const useReviewStore = create<ReviewStore>((set) => ({
   evalMetrics: {
     finetuned: emptyMetrics,
     base: emptyMetrics,
-    gpt4o: emptyMetrics
+    gpt4o: emptyMetrics,
+    groq: emptyMetrics,
+    heuristic: emptyMetrics
   },
   fetchReviews: async () => {
     const response = await fetch("/api/reviews");

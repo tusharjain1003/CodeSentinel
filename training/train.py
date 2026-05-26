@@ -27,11 +27,18 @@ def train(config_path: str = "training/config.yaml"):
     print(f"Device: {device}")
 
     if not is_cuda:
+        cfg["model"]["base"] = os.environ.get(
+            "CODESENTINEL_LOCAL_TRAINING_MODEL",
+            "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+        )
+        cfg["training"]["output_dir"] = os.environ.get(
+            "CODESENTINEL_LOCAL_OUTPUT_DIR",
+            "./checkpoints-v2",
+        )
         cfg["training"]["per_device_train_batch_size"] = 1
         cfg["training"]["gradient_accumulation_steps"] = 16
         cfg["training"]["bf16"] = False
         cfg["training"]["fp16"] = True
-        cfg["training"]["eval_steps"] = max(1, cfg["training"]["eval_steps"])
         cfg["lora"]["r"] = 16
         cfg["lora"]["alpha"] = 32
 
@@ -39,13 +46,12 @@ def train(config_path: str = "training/config.yaml"):
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
-    dtype = torch.float16
-    model_kwargs = {
-        "torch_dtype": dtype,
-        "device_map": "auto",
+    model_kwargs: dict = {
+        "torch_dtype": torch.float16,
         "low_cpu_mem_usage": True,
     }
     if is_cuda:
+        model_kwargs["device_map"] = "auto"
         from transformers import BitsAndBytesConfig
 
         bnb_config = BitsAndBytesConfig(
@@ -56,11 +62,14 @@ def train(config_path: str = "training/config.yaml"):
         )
         model_kwargs["quantization_config"] = bnb_config
         model_kwargs["torch_dtype"] = torch.bfloat16
+    else:
+        model_kwargs["device_map"] = None
 
     model = AutoModelForCausalLM.from_pretrained(cfg["model"]["base"], **model_kwargs)
     model.config.use_cache = False
 
     if not is_cuda:
+        model = model.to(device)
         model.gradient_checkpointing_enable()
 
     lora_cfg = cfg["lora"]
