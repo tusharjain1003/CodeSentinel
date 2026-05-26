@@ -36,6 +36,13 @@ def _post_pr_review_sync(repo: str, pr_number: int, comments: list[ReviewComment
     github = Github(settings.github_token)
     repo_obj = github.get_repo(repo)
     pr = repo_obj.get_pull(pr_number)
+
+    if not comments:
+        pr.create_issue_comment(
+            "**CodeSentinel** reviewed this PR and found no issues to report."
+        )
+        return
+
     head_commit = repo_obj.get_commit(pr.head.sha)
     review_comments = []
 

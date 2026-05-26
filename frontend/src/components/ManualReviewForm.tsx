@@ -15,7 +15,6 @@ export function ManualReviewForm() {
         pr_url: form.get("pr_url"),
         repo: form.get("repo"),
         pr_number: Number(form.get("pr_number")),
-        diff_url: form.get("diff_url")
       })
     });
     setStatus(response.ok ? "Accepted" : "Failed");
@@ -38,10 +37,6 @@ export function ManualReviewForm() {
         <label>
           <span>PR URL</span>
           <input name="pr_url" type="url" required />
-        </label>
-        <label>
-          <span>Diff URL</span>
-          <input name="diff_url" type="url" required />
         </label>
         <button type="submit">
           <Play size={16} />

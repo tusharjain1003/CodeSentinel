@@ -60,5 +60,11 @@ async def fetch_pr_diff(diff_url: str, token: str = "") -> str:
         headers["Authorization"] = f"Bearer {token}"
     async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
         response = await client.get(diff_url, headers=headers)
+        content_length = response.headers.get("content-length")
+        if content_length and int(content_length) > MAX_DIFF_BYTES:
+            raise ValueError(
+                f"Diff too large: {int(content_length)} bytes "
+                f"(max {MAX_DIFF_BYTES})",
+            )
         response.raise_for_status()
         return response.text

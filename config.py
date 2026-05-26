@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     wandb_api_key: str = ""
     api_key: str = ""
     rate_limit_per_minute: int = 30
+    allow_memory_db_fallback: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -45,8 +45,9 @@ async def node_parse_pr(state: ReviewState) -> ReviewState:
 
 async def node_run_agents(state: ReviewState) -> ReviewState:
     coordinator = ReviewCoordinator(
-        model_name=None,  # Use heuristic-only mode (no LLM calls needed)
+        model_name=settings.finetuned_model_name,
         fallback_model_name=settings.gpt4o_model_name,
+        heuristic_fallback=True,
     )
     comments: list[ReviewComment] = []
     agent_reviews = []

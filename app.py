@@ -35,6 +35,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def seed_demo_reviews():
+    if not settings.allow_memory_db_fallback:
+        return
     try:
         from db.memory import insert_review as mem_insert  # noqa: PLC0415
 
@@ -133,7 +135,10 @@ class ManualReviewRequest(BaseModel):
     pr_url: str
     repo: str
     pr_number: int = Field(gt=0)
-    diff_url: str
+
+    @classmethod
+    def _github_diff_url(cls, repo: str, pr_number: int) -> str:
+        return f"https://github.com/{repo}/pull/{pr_number}.diff"
 
 
 class FeedbackRequest(BaseModel):
@@ -144,8 +149,11 @@ class FeedbackRequest(BaseModel):
 
 
 def verify_webhook_signature(request: Request, body: bytes) -> None:
-    if settings.github_webhook_secret == "change-me":
-        return
+    if settings.github_webhook_secret in ("change-me", ""):
+        raise HTTPException(
+            status_code=500,
+            detail="Webhook secret not configured. Set GITHUB_WEBHOOK_SECRET in .env",
+        )
     signature = request.headers.get("X-Hub-Signature-256", "")
     expected = "sha256=" + hmac.new(
         settings.github_webhook_secret.encode("utf-8"),
@@ -255,12 +263,13 @@ async def manual_review(
 ) -> dict[str, str]:
     enforce_rate_limit(request)
     review_id = str(uuid4())
+    diff_url = ManualReviewRequest._github_diff_url(payload.repo, payload.pr_number)
     background_tasks.add_task(
         run_review_pipeline,
         pr_url=payload.pr_url,
         repo=payload.repo,
         pr_number=payload.pr_number,
-        diff_url=payload.diff_url,
+        diff_url=diff_url,
         session_id=review_id,
     )
     return {"status": "accepted", "review_id": review_id}

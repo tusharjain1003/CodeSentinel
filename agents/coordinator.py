@@ -28,10 +28,10 @@ class ReviewCoordinator:
         self,
         model_name: str | None = None,
         fallback_model_name: str | None = None,
+        heuristic_fallback: bool = True,
     ) -> None:
         self.model_name = model_name
         self.fallback_model_name = fallback_model_name
-        heuristic_fallback = model_name is None
         self.agents = [
             BugAgent(model_name=model_name, heuristic_fallback=heuristic_fallback),
             SecurityAgent(model_name=model_name, heuristic_fallback=heuristic_fallback),
@@ -47,11 +47,15 @@ class ReviewCoordinator:
             agent_reviews = await self._run_agents(diff, file_path)
             return self._build_result(agent_reviews, self.model_name or "heuristic")
         except Exception:
-            if not self.fallback_model_name:
-                raise
-            fallback = ReviewCoordinator(model_name=self.fallback_model_name)
+            if self.fallback_model_name:
+                fallback = ReviewCoordinator(model_name=self.fallback_model_name)
+                try:
+                    return await fallback.coordinate_with_reviews(diff, file_path)
+                except Exception:
+                    pass
+            heuristic = ReviewCoordinator(model_name=None, heuristic_fallback=True)
             try:
-                return await fallback.coordinate_with_reviews(diff, file_path)
+                return await heuristic.coordinate_with_reviews(diff, file_path)
             except Exception:
                 return CoordinationResult(
                     comments=[],
