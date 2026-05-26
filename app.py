@@ -33,6 +33,13 @@ app.add_middleware(
 )
 
 
+@app.on_event("shutdown")
+async def shutdown_db_pool():
+    from db.access import close_pool  # noqa: PLC0415
+
+    await close_pool()
+
+
 @app.on_event("startup")
 async def seed_demo_reviews():
     if not settings.allow_memory_db_fallback:
@@ -133,7 +140,7 @@ async def seed_demo_reviews():
 
 class ManualReviewRequest(BaseModel):
     pr_url: str
-    repo: str
+    repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
     pr_number: int = Field(gt=0)
 
     @classmethod
